@@ -13,6 +13,20 @@ int foometa_init(foometa *cls, PyObject *args, PyObject *kwargs) {
   return 0;
 }
 
+static PyObject* foometa_getitem(PyObject* self, Py_ssize_t ix) {
+    printf("foometa_getitem %zd\n", ix);
+    PyObject_Print(self, stdout, 0);
+    printf("\n");
+    return Py_None;
+}
+
+static PySequenceMethods foometa_seqmeth = {
+    NULL, NULL, NULL, foometa_getitem,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL
+};
+
+
 #define DEFERRED_ADDRESS(ADDR) nullptr
 
 static PyTypeObject foometa_type = {
@@ -27,7 +41,7 @@ static PyTypeObject foometa_type = {
     0,                                          /* tp_reserved */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
+    &foometa_seqmeth,                            /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     0,                                          /* tp_hash */
     0,                                          /* tp_call */
@@ -62,6 +76,19 @@ PyObject *fooparent_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
   return obj;
 }
 
+static PyObject* fooparent_getitem(PyObject* self, Py_ssize_t ix) {
+    printf("fooparent_getitem %zd\n", ix);
+    PyObject_Print(self, stdout, 0);
+    printf("\n");
+    return Py_None;
+}
+
+static PySequenceMethods fooparent_seqmeth = {
+    NULL, NULL, NULL, fooparent_getitem,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL
+};
+
 static PyTypeObject fooparent_type = {
     PyVarObject_HEAD_INIT(&foometa_type, 0)
     "demo.fooparent",
@@ -74,7 +101,7 @@ static PyTypeObject fooparent_type = {
     0,                                          /* tp_reserved */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
+    &fooparent_seqmeth,                         /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     0,                                          /* tp_hash */
     0,                                          /* tp_call */
