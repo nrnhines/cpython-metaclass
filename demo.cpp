@@ -70,14 +70,41 @@ static PyTypeObject foometa_type = {
     0                                           /* tp_new */
 };
 
-static int metaclass_init(PyObject *self, PyObject *args, PyObject *kwds) {
-    if (PyType_Type.tp_init((PyObject*)cls, args, kwargs) < 0) {
+struct hocclass {
+    PyTypeObject head;
+};
+
+static int hocclass_init(hocclass *cls, PyObject *args, PyObject *kwds) {
+    if (PyType_Type.tp_init((PyObject*)cls, args, kwds) < 0) {
         return -1;
     }
-    printf("metaclass_init\n");
+    printf("hocclass_init\n");
     return 0;
 }
 
+static PyObject* hocclass_getitem(PyObject* self, Py_ssize_t ix) {
+    printf("hocclass_getitem %zd\n", ix);
+    PyObject_Print(self, stdout, 0);
+    printf("\n");
+    return Py_None;
+}
+
+// Note use of slots was informed by nanobind (search for nb_meta)
+
+static PyType_Slot hocclass_slots[] = {
+    {Py_tp_base, nullptr}, // replaced below
+    {Py_tp_init, (void *)hocclass_init},
+    {Py_sq_item, (void *)hocclass_getitem},
+    {0, NULL}
+};
+
+static PyType_Spec hocclass_spec = {
+    .name = "demo.hocclass",
+    .basicsize = 0,
+    .itemsize = 0,
+    .flags = Py_TPFLAGS_DEFAULT, //  | Py_TPFLAGS_HEAPTYPE,
+    .slots = hocclass_slots
+};
 
 PyObject *fooparent_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
     PyObject* obj = type->tp_alloc(type, 0);
@@ -144,19 +171,28 @@ demo_init(PyObject *m) {
     if (PyType_Ready(&foometa_type) < 0) {
         return -1;
     }
+
+    hocclass_slots[0].pfunc = (PyObject *) &PyType_Type;
+    PyObject *custom_hocclass = PyType_FromSpec(&hocclass_spec);
+    if (custom_hocclass == NULL) {
+        return -1;
+    }
+
     if (PyType_Ready(&fooparent_type) < 0) {
         return -1;
     }
 
     Py_INCREF(&foometa_type);
-    if (PyModule_AddObject(m, "foometa",
-                         (PyObject *) &foometa_type) < 0) {
+    if (PyModule_AddObject(m, "foometa", (PyObject *) &foometa_type) < 0) {
+        return -1;
+    }
+
+    if (PyModule_AddObject(m, "hocclass", custom_hocclass) < 0) {
         return -1;
     }
 
     Py_INCREF(&fooparent_type);
-    if (PyModule_AddObject(m, "fooparent",
-                         (PyObject *) &fooparent_type) < 0)
+    if (PyModule_AddObject(m, "fooparent", (PyObject *) &fooparent_type) < 0) {
          return -1;
     }
     return 0;

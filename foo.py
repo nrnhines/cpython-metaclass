@@ -3,10 +3,12 @@ import demo
 class foometa(metaclass=demo.foometa):
     pass
 
-"""
-class A(fooparent):
+class A(demo.fooparent):
     pass
 
-class B(fooparent):
+class B(demo.fooparent):
     pass
-"""
+
+class foohocclass(metaclass=demo.hocclass):
+    pass
+
