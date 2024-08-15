@@ -2,15 +2,15 @@
 #include <iostream>
 
 struct foometa {
-  PyTypeObject head;
+    PyTypeObject head;
 };
 
 int foometa_init(foometa *cls, PyObject *args, PyObject *kwargs) {
-  if (PyType_Type.tp_init((PyObject*)cls, args, kwargs) < 0) {
-    return -1;
-  }
-  std::cerr << "I'm called on class construction time!\n";
-  return 0;
+    if (PyType_Type.tp_init((PyObject*)cls, args, kwargs) < 0) {
+      return -1;
+    }
+    std::cerr << "I'm called on class construction time!\n";
+    return 0;
 }
 
 static PyObject* foometa_getitem(PyObject* self, Py_ssize_t ix) {
@@ -70,10 +70,18 @@ static PyTypeObject foometa_type = {
     0                                           /* tp_new */
 };
 
-PyObject *fooparent_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-  PyObject* obj = type->tp_alloc(type, 0);
-  return obj;
+static int metaclass_init(PyObject *self, PyObject *args, PyObject *kwds) {
+    if (PyType_Type.tp_init((PyObject*)cls, args, kwargs) < 0) {
+        return -1;
+    }
+    printf("metaclass_init\n");
+    return 0;
+}
+
+
+PyObject *fooparent_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
+    PyObject* obj = type->tp_alloc(type, 0);
+    return obj;
 }
 
 static PyObject* fooparent_getitem(PyObject* self, Py_ssize_t ix) {
@@ -132,24 +140,26 @@ static PyTypeObject fooparent_type = {
 
 int
 demo_init(PyObject *m) {
-  foometa_type.tp_base = &PyType_Type;
-  if (PyType_Ready(&foometa_type) < 0) {
-    return -1;
-  }
-  if (PyType_Ready(&fooparent_type) < 0) {
-    return -1;
-  }
+    foometa_type.tp_base = &PyType_Type;
+    if (PyType_Ready(&foometa_type) < 0) {
+        return -1;
+    }
+    if (PyType_Ready(&fooparent_type) < 0) {
+        return -1;
+    }
 
-  Py_INCREF(&foometa_type);
-  if (PyModule_AddObject(m, "foometa",
-                         (PyObject *) &foometa_type) < 0)
-      return -1;
+    Py_INCREF(&foometa_type);
+    if (PyModule_AddObject(m, "foometa",
+                         (PyObject *) &foometa_type) < 0) {
+        return -1;
+    }
 
-  Py_INCREF(&fooparent_type);
-  if (PyModule_AddObject(m, "fooparent",
+    Py_INCREF(&fooparent_type);
+    if (PyModule_AddObject(m, "fooparent",
                          (PyObject *) &fooparent_type) < 0)
-      return -1;
-  return 0;
+         return -1;
+    }
+    return 0;
 }
 
 static PyModuleDef demomodule = {
@@ -162,8 +172,8 @@ static PyModuleDef demomodule = {
 
 PyMODINIT_FUNC
 PyInit_demo() {
-  PyObject* m = PyModule_Create(&demomodule);
-  if (m == nullptr) return nullptr;
-  if (demo_init(m) < 0) return nullptr;
-  return m;
+    PyObject* m = PyModule_Create(&demomodule);
+    if (m == nullptr) return nullptr;
+    if (demo_init(m) < 0) return nullptr;
+    return m;
 }
