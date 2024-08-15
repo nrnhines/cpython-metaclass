@@ -92,7 +92,7 @@ static PyObject* hocclass_getitem(PyObject* self, Py_ssize_t ix) {
 // Note use of slots was informed by nanobind (search for nb_meta)
 
 static PyType_Slot hocclass_slots[] = {
-    {Py_tp_base, nullptr}, // replaced below
+    {Py_tp_base, nullptr}, // &PyType_Type : not obvious why it must be set at runtime
     {Py_tp_init, (void *)hocclass_init},
     {Py_sq_item, (void *)hocclass_getitem},
     {0, NULL}
@@ -105,6 +105,33 @@ static PyType_Spec hocclass_spec = {
     .flags = Py_TPFLAGS_DEFAULT, //  | Py_TPFLAGS_HEAPTYPE,
     .slots = hocclass_slots
 };
+
+PyObject *hocobject_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
+    PyObject* obj = type->tp_alloc(type, 0);
+    return obj;
+}   
+
+static PyObject* hocobject_getitem(PyObject* self, Py_ssize_t ix) {
+    printf("hocobject_getitem %zd\n", ix);
+    PyObject_Print(self, stdout, 0);   
+    printf("\n");
+    return Py_None;
+}
+
+static PyType_Slot hocobject_slots[] = {
+    {Py_tp_new, (void *)hocobject_new},
+    {Py_sq_item, (void *)hocobject_getitem},
+    {0, NULL}
+};   
+    
+static PyType_Spec hocobject_spec = {
+    .name = "demo.hocobject",
+    .basicsize = 0,
+    .itemsize = 0,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .slots = hocobject_slots
+};
+
 
 PyObject *fooparent_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
     PyObject* obj = type->tp_alloc(type, 0);
@@ -165,6 +192,22 @@ static PyTypeObject fooparent_type = {
     fooparent_new                                           /* tp_new */
 };
 
+#if PY_VERSION_HEX < 0x030C0000
+#define TYPE_FROM_METACLASS_IMPL 1
+#else
+#define TYPE_FROM_METACLASS_IMPL 0
+#endif
+
+static PyObject *type_from_metaclass(PyTypeObject *meta, PyObject *mod,
+                                        PyType_Spec *spec) {
+#if TYPE_FROM_METACLASS_IMPL == 0
+    return PyType_FromMetaclass(meta, mod, spec, nullptr);
+#else
+    // add the nanobind implementation from nb_type.cpp
+    return nullptr;
+#endif
+}
+
 int
 demo_init(PyObject *m) {
     foometa_type.tp_base = &PyType_Type;
@@ -178,6 +221,12 @@ demo_init(PyObject *m) {
         return -1;
     }
 
+    PyObject* custom_hocobject = type_from_metaclass((PyTypeObject*)custom_hocclass,
+                                  m, &hocobject_spec);
+    if (custom_hocobject == NULL) {
+        return -1;
+    }
+
     if (PyType_Ready(&fooparent_type) < 0) {
         return -1;
     }
@@ -188,6 +237,10 @@ demo_init(PyObject *m) {
     }
 
     if (PyModule_AddObject(m, "hocclass", custom_hocclass) < 0) {
+        return -1;
+    }
+
+    if (PyModule_AddObject(m, "hocobject", custom_hocobject) < 0) {
         return -1;
     }
 
