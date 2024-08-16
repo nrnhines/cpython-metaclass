@@ -17,3 +17,13 @@ p("type(type(type(fp)))")
 
 p("fp[3]")
 p("type(fp)[5]")
+
+
+ho = demo.hocobject()
+p("ho")
+p("type(ho)")
+p("type(type(ho))")
+p("type(type(type(ho)))")
+
+p("ho[3]")
+p("type(ho)[5]")
