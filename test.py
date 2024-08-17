@@ -27,3 +27,12 @@ p("type(type(type(ho)))")
 
 p("ho[3]")
 p("type(ho)[5]")
+
+v = demo.Vector()
+p("v")
+p("type(v)")
+p("type(type(v))")
+p("type(type(type(v)))")
+
+p("v[3]")
+p("type(v)[5]")

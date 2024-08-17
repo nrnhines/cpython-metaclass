@@ -133,6 +133,8 @@ static PyType_Spec hocobject_spec = {
 };
 
 
+
+
 PyObject *fooparent_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
     PyObject* obj = type->tp_alloc(type, 0);
     return obj;
@@ -208,8 +210,17 @@ static PyObject *type_from_metaclass(PyTypeObject *meta, PyObject *mod,
 #endif
 }
 
-int
-demo_init(PyObject *m) {
+static PyType_Spec obj_spec_from_name(const char* name) {
+    return {
+        name,
+        0,
+        0,
+        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+        hocobject_slots
+    };
+}
+
+int demo_init(PyObject *m) {
     foometa_type.tp_base = &PyType_Type;
     if (PyType_Ready(&foometa_type) < 0) {
         return -1;
@@ -224,6 +235,15 @@ demo_init(PyObject *m) {
     PyObject* custom_hocobject = type_from_metaclass((PyTypeObject*)custom_hocclass,
                                   m, &hocobject_spec);
     if (custom_hocobject == NULL) {
+        return -1;
+    }
+
+    const char* name = "Vector";
+    auto fullname = std::string("demo.") + name;
+    auto bases = PyTuple_Pack(1, custom_hocobject);
+    auto spec = obj_spec_from_name(fullname.c_str());
+    auto pto = (PyTypeObject*) PyType_FromSpecWithBases(&spec, bases);
+    if (PyModule_AddObject(m, "Vector", (PyObject*) pto) < 0) {
         return -1;
     }
 
