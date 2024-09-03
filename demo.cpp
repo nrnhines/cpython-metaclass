@@ -194,21 +194,8 @@ static PyTypeObject fooparent_type = {
     fooparent_new                                           /* tp_new */
 };
 
-#if PY_VERSION_HEX < 0x030C0000
-#define TYPE_FROM_METACLASS_IMPL 1
-#else
-#define TYPE_FROM_METACLASS_IMPL 0
-#endif
-
-static PyObject *type_from_metaclass(PyTypeObject *meta, PyObject *mod,
-                                        PyType_Spec *spec) {
-#if TYPE_FROM_METACLASS_IMPL == 0
-    return PyType_FromMetaclass(meta, mod, spec, nullptr);
-#else
-    // add the nanobind implementation from nb_type.cpp
-    return nullptr;
-#endif
-}
+PyObject *nrn_type_from_metaclass(PyTypeObject *meta, PyObject *mod,
+                                        PyType_Spec *spec, PyObject* base);
 
 static PyType_Spec obj_spec_from_name(const char* name) {
     return {
@@ -232,8 +219,8 @@ int demo_init(PyObject *m) {
         return -1;
     }
 
-    PyObject* custom_hocobject = type_from_metaclass((PyTypeObject*)custom_hocclass,
-                                  m, &hocobject_spec);
+    PyObject* custom_hocobject = nrn_type_from_metaclass((PyTypeObject*)custom_hocclass,
+                                  m, &hocobject_spec, nullptr);
     if (custom_hocobject == NULL) {
         return -1;
     }
@@ -242,7 +229,9 @@ int demo_init(PyObject *m) {
     auto fullname = std::string("demo.") + name;
     auto bases = PyTuple_Pack(1, custom_hocobject);
     auto spec = obj_spec_from_name(fullname.c_str());
-    auto pto = (PyTypeObject*) PyType_FromSpecWithBases(&spec, bases);
+    //auto pto = (PyTypeObject*) PyType_FromSpecWithBases(&spec, bases);
+    auto pto = (PyTypeObject*) nrn_type_from_metaclass(
+        (PyTypeObject*)custom_hocclass, m, &spec, bases);
     if (PyModule_AddObject(m, "Vector", (PyObject*) pto) < 0) {
         return -1;
     }

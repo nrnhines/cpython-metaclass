@@ -1,6 +1,6 @@
 from distutils.core import setup, Extension
 
-module1 = Extension("demo", sources=["demo.cpp"], extra_compile_args=["-O0"])
+module1 = Extension("demo", sources=["demo.cpp","nrn_metaclass.cpp"], extra_compile_args=["-O0"])
 
 setup(
     name="PackageName",
